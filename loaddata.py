@@ -1,27 +1,45 @@
-import sqlite3 as sqlite
+#import sqlite3 as sqlite
+#import pandas as pd
+#import pandas.io.sql as psql
+
 import pandas as pd
-import pandas.io.sql as psql
+import numpy as np
+import random
+import math
 
-f = open("data.csv")
-train = pd.read_csv(f,sep=',', header = 'infer', low_memory=False)
+def importfiles(train, test):
+    f1 = open(train)
+    f2 = open(test)
 
-# generating a matrix out of dataframe
-trainpivot = trainsub.pivot(index='user_id',columns='sid', values='plays')
-# creating the mapping of user index to user id
-user_index = pd.DataFrame(trainpivot.index).reset_index()
-user_index.columns = [['user_index','user_id']]
-trainsub = pd.merge(trainsub, user_index, on='user_id')
-testsub = pd.merge(testsub, user_index, on='user_id')
-# creating the mapping of song index to song id
-song_index = pd.DataFrame(trainpivot.columns).reset_index()
-song_index.columns = [['song_index','sid']]
-trainsub = pd.merge(trainsub, song_index, on='sid')
-testsub = pd.merge(testsub, song_index, on='sid')
+    data_df = pd.read_csv(f1, sep=',', header = 'infer', low_memory=False)
+    label_df = data_df[['label']]
+    data_df = data_df.drop('label', 1)
 
-# Generating the default M_train and M_test matrices
-M_train = trainpivot.as_matrix()
-M_train = np.nan_to_num(M_train)
+    data_df =  data_df.drop(['0','20', '5', '7', '8', '9', '14', '16', '17', 
+                             '56', '57', '58', '23', '25', '18', '26'],  axis=1)
+    data_df = data_df.drop(['29', '31', '32', '35'],  axis=1)
+    data = np.array(data_df)
+    label = np.array(label_df)
+    
+    quiz_df = pd.read_csv(f2, sep=',', header = 'infer', low_memory=False)
+    quiz_df = quiz_df.drop(['0','20', '5', '7', '8', '9', '14', '16', '17', 
+                            '56', '57', '58', '23', '25', '18', '26'],  axis=1)
+    quiz_df = quiz_df.drop(['31', '32', '35', '29'],  axis=1)
 
-testpivot = testsub.pivot(index='user_id',columns='sid', values='plays')
-M_test = testpivot.as_matrix()
-M_test = np.nan_to_num(M_test)
+    quiz = np.array(quiz_df)
+    
+    return data, label, quiz
+    
+
+def splitdata(data, label):
+    n = data.shape[0]
+    train_num = int(math.ceil(n*.8))
+    indices = random.sample(xrange(n), n)
+
+    training_idx, test_idx = indices[train_num:], indices[:train_num]
+    training, test = data[training_idx,:], data[test_idx,:]
+    lab, testlabel = label[training_idx,:], label[test_idx,:]
+    
+    return training, lab, test, testlabel
+
+
